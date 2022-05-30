@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,12 +14,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $this->call([
-            RolesSeeder::class,
-            UserSeeder::class,
-            OfferSeeder::class,
-            RoomSeeder::class,
-            ReservationSeeder::class
-        ]);
+        // $this->call([
+        //     RolesSeeder::class,
+        //     UserSeeder::class,
+        //     OfferSeeder::class,
+        //     RoomSeeder::class,
+        //     ReservationSeeder::class
+        // ]);
+
+        DB::select('call seed_data()');
     }
 }
