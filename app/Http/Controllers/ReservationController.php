@@ -28,8 +28,6 @@ class ReservationController extends Controller
      */
     public function index(): View
     {
-        DB::select('call get_reservations_for_user(?)', [Auth::id()]);
-
         return view('reservations.index', [
             'reservations' => Reservation::where('user_id', Auth::id())->get(),
         ]);
