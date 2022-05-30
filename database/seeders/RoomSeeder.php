@@ -6,6 +6,7 @@ use App\Models\Offer;
 use App\Models\Room;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class RoomSeeder extends Seeder
 {
