@@ -19,6 +19,15 @@ class OfferController extends Controller
         $this->authorizeResource(Offer::class, 'offer');
     }
 
+    protected function resourceAbilityMap(): array
+    {
+        return [
+            'edit' => 'update',
+            'update' => 'update',
+            'destroy' => 'delete',
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      *
