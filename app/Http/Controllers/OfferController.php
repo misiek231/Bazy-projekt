@@ -10,6 +10,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class OfferController extends Controller
@@ -90,8 +91,14 @@ class OfferController extends Controller
      */
     public function show(Offer $offer): View
     {
+        $offer = DB::selectOne('select * from getOfferById(?)', [$offer->id]);
+        $user = DB::selectOne('select * from getUserById(?)', [$offer->user_id]);
+        $rooms = DB::select('select * from getRoomsByOfferId(?)', [$offer->id]);
+        $offer->user = $user;
+        $offer->rooms = $rooms;
+
         return view('offers.show', [
-            'offer' => Offer::findOrFail($offer->id)
+            'offer' => $offer
         ]);
     }
 

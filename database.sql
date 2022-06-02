@@ -218,6 +218,26 @@ values
 
 -- Functions
 
+--
+
+CREATE OR REPLACE FUNCTION getOfferById(offer_id integer)
+    RETURNS SETOF offers
+AS $$
+    SELECT * FROM offers o WHERE o.id = offer_id;
+$$ language sql stable;
+
+CREATE OR REPLACE FUNCTION getUserById(user_id integer)
+    RETURNS SETOF users
+AS $$
+SELECT * FROM users u WHERE u.id = user_id;
+$$ language sql stable;
+
+CREATE OR REPLACE FUNCTION getRoomsByOfferId(offerId integer)
+    RETURNS SETOF rooms
+AS $$
+SELECT * FROM rooms r WHERE r.offer_id = offerId;
+$$ language sql stable;
+
 -- TODO: implement functions from controllers
 
 -- Procedures

@@ -14,7 +14,7 @@ return new class extends Migration
      */
     public function up()
     {
-        DB::unprepared(file_get_contents(base_path() . "/database.sql"));
+        DB::raw(file_get_contents(base_path() . "/database.sql"));
     }
 
     /**
