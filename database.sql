@@ -238,6 +238,23 @@ AS $$
 SELECT * FROM rooms r WHERE r.offer_id = offerId;
 $$ language sql stable;
 
+CREATE OR REPLACE PROCEDURE deleteRoomsByOfferId(offerId int)
+language plpgsql
+AS $$
+    BEGIN
+        delete FROM rooms r WHERE r.offer_id = offerId;
+    END;
+$$
+
+
+CREATE OR REPLACE PROCEDURE deleteOffer(offerId int)
+    language plpgsql
+AS $$
+BEGIN
+    delete FROM offers o WHERE o.id = offerId;
+END;
+$$
+
 -- TODO: implement functions from controllers
 
 -- Procedures

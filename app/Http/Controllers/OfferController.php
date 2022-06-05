@@ -110,8 +110,15 @@ class OfferController extends Controller
      */
     public function edit(Offer $offer): View
     {
+
+        $offer = DB::selectOne('select * from getOfferById(?)', [$offer->id]);
+        $user = DB::selectOne('select * from getUserById(?)', [$offer->user_id]);
+        $rooms = DB::select('select * from getRoomsByOfferId(?)', [$offer->id]);
+        $offer->user = $user;
+        $offer->rooms = $rooms;
+
         return view('offers.create', [
-            'offer' => Offer::findOrFail($offer->id)
+            'offer' => $offer
         ]);
     }
 
@@ -146,9 +153,11 @@ class OfferController extends Controller
      */
     public function destroy(Offer $offer): RedirectResponse
     {
-        $offer = Offer::findOrFail($offer->id);
-        $offer->rooms()->delete();
-        $offer->delete();
+
+        $offer = DB::selectOne('select * from getOfferById(?)', [$offer->id]);
+        DB::select('select * from deleteRoomsByOfferId(?)', [$offer->id]);
+        DB::select('select * from deleteOffer(?)', [$offer->id]);
+
         return redirect()->route('offers.my');
     }
 }
