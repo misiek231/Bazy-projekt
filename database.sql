@@ -218,8 +218,6 @@ values
 
 -- Functions
 
---
-
 CREATE OR REPLACE FUNCTION getOfferById(offer_id integer)
     RETURNS SETOF offers
 AS $$
@@ -238,13 +236,34 @@ AS $$
 SELECT * FROM rooms r WHERE r.offer_id = offerId;
 $$ language sql stable;
 
-CREATE OR REPLACE PROCEDURE deleteRoomsByOfferId(offerId int)
-language plpgsql
+CREATE OR REPLACE FUNCTION insertOffer(
+    i_name varchar,
+    i_description varchar,
+    i_place varchar,
+    i_accommodationType varchar,
+    i_image varchar,
+    i_userId int
+) RETURNS integer
 AS $$
-    BEGIN
-        delete FROM rooms r WHERE r.offer_id = offerId;
-    END;
-$$
+DECLARE
+    newId integer;
+BEGIN
+    insert into offers (id, created_at, updated_at, name, description, image, place, accommodationType, user_id) values
+        (now(), now(), i_name, i_description, i_image, i_place, i_accommodationType, i_userId) RETURNING id into newId;
+
+    RETURN newId;
+END;
+$$ language plpgsql VOLATILE;
+
+-- Procedures
+
+CREATE OR REPLACE PROCEDURE deleteRoomsByOfferId(offerId int)
+    language plpgsql
+AS $$
+BEGIN
+    delete FROM rooms r WHERE r.offer_id = offerId;
+END;
+$$;
 
 
 CREATE OR REPLACE PROCEDURE deleteOffer(offerId int)
@@ -253,10 +272,26 @@ AS $$
 BEGIN
     delete FROM offers o WHERE o.id = offerId;
 END;
-$$
+$$;
 
--- TODO: implement functions from controllers
-
--- Procedures
-
--- TODO: implement procedures from controllers
+CREATE OR REPLACE PROCEDURE updateOffer(
+    u_offerId int,
+    u_name varchar,
+    u_description varchar,
+    u_place varchar,
+    u_accommodationType varchar,
+    u_image varchar
+)
+    language plpgsql
+AS $$
+BEGIN
+    update offers as o set
+        o.name = u_name,
+        o.description = u_description,
+        o.place = u_place,
+        o.accommodationType = u_accommodationType,
+        o.image = u_image,
+        o.updated_at = now()
+    where o.id = u_offerId;
+END;
+$$;

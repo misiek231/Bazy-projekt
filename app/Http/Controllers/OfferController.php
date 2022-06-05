@@ -79,8 +79,18 @@ class OfferController extends Controller
         $requestData = $request->all();
         $requestData['image'] = $fileName;
         $requestData['user_id'] = Auth::id();
-        $offer = Offer::create($requestData);
-        return redirect()->route('offers.show', $offer->id);
+
+        $offerId = DB::insert('Select * from insertOffer(?)',
+            [
+                $requestData->name,
+                $requestData->description,
+                $requestData->place,
+                $requestData->accommodationType,
+                $requestData->image,
+                $requestData->user_id
+            ]);
+
+        return redirect()->route('offers.show', $offerId);
     }
 
     /**
@@ -131,18 +141,20 @@ class OfferController extends Controller
      */
     public function update(UpdateOfferRequest $request, Offer $offer): RedirectResponse
     {
-        $trip = Offer::findOrFail($offer->id);
-        $oldFileName = $trip->image;
+        $offer = DB::selectOne('select * from getOfferById(?)', [$offer->id]);
+        $oldFileName = $offer->image;
         $input = $request->all();
-        $trip->update($input);
+
+        $offer = DB::update('select * from updateOffer(?)', [$input->id, $input->name, $input->description, $input->place, $input->accommodationType, $input->image]);
+
         if ($request->hasFile('image')) {
             $fileName = $request->image->getClientOriginalName();
             $request->file('image')->storeAs('', $fileName, 'public');
-            $trip->image = $fileName;
-            $trip->save();
+            $offer->image = $fileName;
+            $offer->save();
             Storage::disk('public')->delete($oldFileName);
         }
-        return redirect()->route('offers.show', $trip->id);
+        return redirect()->route('offers.show', $offer->id);
     }
 
     /**
