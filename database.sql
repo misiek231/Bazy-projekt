@@ -236,6 +236,33 @@ AS $$
 SELECT * FROM rooms r WHERE r.offer_id = offerId;
 $$ language sql stable;
 
+-- DS --
+CREATE OR REPLACE FUNCTION getRoomById (room_id integer)
+    RETURNS SETOF rooms
+AS $$
+    SELECT * FROM rooms r WHERE r.id = room_id;
+$$ language sql stable;
+
+CREATE OR REPLACE FUNCTION DeleteRoomById (room_id integer)
+language plpgsql
+AS $$
+    BEGIN
+        delete FROM rooms r WHERE r.id = room_id;
+    END;
+$$
+
+CREATE OR REPLACE FUNCTION disabledDates (roomId INTEGER) 
+RETURNS TABLE (rsrv_date_from DATE, rsrv_date_to DATE)
+AS $$
+BEGIN
+	RETURN QUERY
+	SELECT date_from, date_to 
+	FROM reservations
+	WHERE reservations.room_id = roomId;
+END; $$ 
+LANGUAGE 'plpgsql';
+--
+
 CREATE OR REPLACE FUNCTION insertOffer(
     i_name varchar,
     i_description varchar,
