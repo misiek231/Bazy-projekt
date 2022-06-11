@@ -6,7 +6,6 @@
                 @foreach($offers as $offer)
                     @include('components.offer-card', ['offer' => $offer, 'canManage' => true])
                 @endforeach
-                <div class="d-flex justify-content-center">{{$offers->links()}}</div>
             </div>
         </div>
     </div>

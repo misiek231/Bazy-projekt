@@ -224,6 +224,27 @@ AS $$
     SELECT * FROM offers o WHERE o.id = offer_id;
 $$ language sql stable;
 
+CREATE OR REPLACE FUNCTION getOfferByUserId(userId integer)
+    RETURNS SETOF offers
+AS $$
+SELECT * FROM offers o WHERE o.user_id = userId;
+$$ language sql stable;
+
+CREATE OR REPLACE FUNCTION getFilteredOffers(f_name varchar, f_dateFrom date, f_dateTo date, f_place varchar, f_peopleAmount int, f_accommodationType varchar, f_priceFrom float, f_priceTo float)
+    RETURNS SETOF offers
+AS $$
+    select * from offers where
+    (name::text like '%' || f_name || '%' or f_name is null)
+    and (exists (select * from rooms where offers.id = rooms.offer_id and not exists
+               (select * from reservations where rooms.id = reservations.room_id and f_dateTo is not null and date_from < f_dateTo and f_dateFrom is not null and date_to > f_dateFrom)))
+    and (place::text like f_place or f_place is null)
+    and ("accommodationType"::text like f_accommodationType or f_accommodationType is null)
+    and (exists (select * from rooms where offers.id = rooms.offer_id and price >= f_priceFrom or f_priceFrom is null) and exists
+               (select * from rooms where offers.id = rooms.offer_id and price <= f_priceTo or f_priceTo is null) and exists
+               (select * from rooms where offers.id = rooms.offer_id and beds_amount >= f_peopleAmount or f_peopleAmount is null))
+
+$$ language sql stable;
+
 CREATE OR REPLACE FUNCTION getUserById(user_id integer)
     RETURNS SETOF users
 AS $$
@@ -275,7 +296,7 @@ AS $$
 DECLARE
     newId integer;
 BEGIN
-    insert into offers (id, created_at, updated_at, name, description, image, place, accommodationType, user_id) values
+    insert into offers (created_at, updated_at, name, description, image, place, "accommodationType", user_id) values
         (now(), now(), i_name, i_description, i_image, i_place, i_accommodationType, i_userId) RETURNING id into newId;
 
     RETURN newId;

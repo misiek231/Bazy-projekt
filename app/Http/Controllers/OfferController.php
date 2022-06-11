@@ -17,6 +17,7 @@ class OfferController extends Controller
 {
     public function __construct()
     {
+        // TODO: try to move auth to sql code
         $this->authorizeResource(Offer::class, 'offer');
     }
 
@@ -37,8 +38,40 @@ class OfferController extends Controller
      */
     public function index(OfferFilterRequest $request): View
     {
+
+        // var_dump(Offer::filter($request)->toSql());
+        // f_name varchar, f_dateFrom date, f_dateTo date, f_place varchar, f_peopleAmount int, f_accommodationType varchar, f_priceFrom float, f_priceTo float
+        $data = [
+            $request->name ?? 'null',
+            $request->dateFrom,
+            $request->dateTo ?? 'null',
+            $request->place ?? 'null',
+            $request->peopleAmount ?? 'null',
+            $request->accommodationType ?? 'null',
+            $request->priceFrom ?? 'null',
+            $request->priceTo ?? 'null',
+        ];
+
+        var_dump($data);
+
+        $offers = DB::select('select * from getFilteredOffers('.
+            (isset($request->name) ? '\''.$request->name.'\'' : 'null').', '.
+            (isset($request->dateFrom) ? '\''.$request->dateFrom.'\'' : 'null').', '.
+            (isset($request->dateTo) ? '\''.$request->dateTo.'\'' : 'null').', '.
+            (isset($request->place) ? '\''.$request->place.'\'' : 'null').', '.
+            (isset($request->peopleAmount) ? '\''.$request->peopleAmount.'\'' : 'null').', '.
+            (isset($request->accommodationType) ? '\''.$request->accommodationType.'\'' : 'null').', '.
+            (isset($request->priceFrom) ? '\''.$request->priceFrom.'\'' : 'null').', '.
+            (isset($request->priceTo) ? '\''.$request->priceTo.'\'' : 'null').')');
+
+
+        foreach ($offers as $offer) {
+            $offer->rooms = DB::select('select * from getRoomsByOfferId(?)', [$offer->id]);
+        }
+
+
         return view('offers.index', [
-            'offers' => Offer::filter($request)->paginate(10),
+            'offers' => $offers //Offer::filter($request)->get(),
         ]);
     }
 
@@ -51,8 +84,11 @@ class OfferController extends Controller
     public function myOffers(): View
     {
         $this->authorize('viewMy', Offer::class);
+
+        $offers = DB::select('select * from getOfferByUserId(?)', [Auth::id()]);
+
         return view('offers.my-offers', [
-            'offers' => Offer::where('user_id', '=', Auth::id())->paginate(10),
+            'offers' => $offers,
         ]);
     }
 
@@ -76,18 +112,15 @@ class OfferController extends Controller
     {
         $fileName = $request->image->getClientOriginalName();
         $request->file('image')->storeAs('', $fileName, 'public');
-        $requestData = $request->all();
-        $requestData['image'] = $fileName;
-        $requestData['user_id'] = Auth::id();
 
-        $offerId = DB::insert('Select * from insertOffer(?)',
+        $offerId = DB::insert('Select * from insertOffer(?, ?, ?, ?, ?, ?)',
             [
-                $requestData->name,
-                $requestData->description,
-                $requestData->place,
-                $requestData->accommodationType,
-                $requestData->image,
-                $requestData->user_id
+                $request->name,
+                $request->description,
+                $request->place,
+                $request->accommodationType,
+                $fileName,
+                Auth::id()
             ]);
 
         return redirect()->route('offers.show', $offerId);

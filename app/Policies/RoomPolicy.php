@@ -38,11 +38,12 @@ class RoomPolicy
      * Determine whether the user can create models.
      *
      * @param User $user
+     * @param Offer $offer
      * @return bool
      */
-    public function create(User $user, Offer $offer): bool
+    public function create(User $user, int $offerOwnerId): bool
     {
-        return $offer->user_id === $user->id;
+        return $offerOwnerId === $user->id;
     }
 
     /**

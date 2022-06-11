@@ -9,7 +9,6 @@ use App\Http\Requests\UpdateRoomRequest;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Response;
 
 class RoomController extends Controller
 {
@@ -27,22 +26,10 @@ class RoomController extends Controller
     protected function resourceAbilityMap(): array
     {
         return [
-            'index' => 'viewAny',
-            'show' => 'view',
             'edit' => 'update',
             'update' => 'update',
             'destroy' => 'delete',
         ];
-    }
-
-    /**
-     * Display a listing of the resource.
-     *
-     * @return Response
-     */
-    public function index()
-    {
-        //
     }
 
     /**
@@ -69,7 +56,7 @@ class RoomController extends Controller
     public function store(StoreRoomRequest $request): RedirectResponse
     {
         $offer = Offer::findOrFail($request->offer_id);
-        $this->authorize('create', [Room::class, $offer]);
+        $this->authorize('create', [Room::class, $offer->user_id]);
         $requestData = $request->all();
         $room = Room::create($requestData);
         return redirect()->route('offers.show', $room->offer_id);

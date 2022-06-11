@@ -19,7 +19,7 @@
 
         <div class="d-flex flex-row align-items-center gap-3 mt-5">
             <h2>Dostępne pokoje</h2>
-            @can('create', [App\Models\Room::class, $offer])
+            @can('create', [App\Models\Room::class, $offer->user_id])
                 <a href="{{route("rooms.create", $offer->id)}}" class="bi bi-plus-square-fill" style="font-size: 20px"></a>
             @endcan
         </div>

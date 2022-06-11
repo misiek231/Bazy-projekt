@@ -24,7 +24,7 @@ class StoreOfferRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|unique:offers,name,',
+            'name' => 'required',
             'place' => 'required',
             'accommodationType' => 'required',
             'description' => 'required',
