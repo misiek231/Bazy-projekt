@@ -258,30 +258,67 @@ SELECT * FROM rooms r WHERE r.offer_id = offerId;
 $$ language sql stable;
 
 -- DS --
-CREATE OR REPLACE FUNCTION getRoomById (room_id integer)
+CREATE OR REPLACE FUNCTION getRoomById(room_id integer)
     RETURNS SETOF rooms
-AS $$
-    SELECT * FROM rooms r WHERE r.id = room_id;
-$$ language sql stable;
+	AS $$
+		SELECT * FROM rooms r WHERE r.id = room_id;
+	$$ language sql stable;
 
-CREATE OR REPLACE FUNCTION DeleteRoomById (room_id integer)
-language plpgsql
-AS $$
-    BEGIN
-        delete FROM rooms r WHERE r.id = room_id;
-    END;
-$$
+CREATE OR REPLACE PROCEDURE DeleteRoomById (room_id int)
+ 	AS $$
+ 		BEGIN
+ 			DELETE FROM rooms WHERE id = room_id;
+ 		END;
+ 	$$ language plpgsql;
 
-CREATE OR REPLACE FUNCTION disabledDates (roomId INTEGER) 
-RETURNS TABLE (rsrv_date_from DATE, rsrv_date_to DATE)
+CREATE OR REPLACE FUNCTION disabledDates (roomId INTEGER)
+	RETURNS TABLE (rsrv_date_from DATE, rsrv_date_to DATE)
+	AS $$
+		BEGIN
+			RETURN QUERY
+			SELECT date_from, date_to 
+			FROM reservations
+			WHERE reservations.room_id = roomId;
+		END; 
+	$$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION insertRoom (
+    ins_name varchar,
+    ins_descr varchar,
+    ins_price double precision,
+    ins_beds integer,
+    ins_offer bigint )
+    RETURNS integer
+    AS $$
+DECLARE
+    newId integer;
+BEGIN
+    insert into rooms (id, created_at, updated_at, name, description, price, beds_amount, offer_id)
+    values ( (SELECT max(id) AS lastId FROM rooms) + 1,
+        now(), now(), ins_name, ins_descr, ins_price, ins_beds, ins_offer) 
+        RETURNING id into newId;
+    RETURN newId;
+END;
+$$ language plpgsql;
+
+CREATE OR REPLACE PROCEDURE updateRoom (
+    up_roomId int,
+    up_name varchar,
+    up_descr varchar,
+    up_price double precision,
+    up_beds integer )
 AS $$
 BEGIN
-	RETURN QUERY
-	SELECT date_from, date_to 
-	FROM reservations
-	WHERE reservations.room_id = roomId;
-END; $$ 
-LANGUAGE 'plpgsql';
+    UPDATE rooms SET
+        updated_at = now(),
+        name = up_name, 
+        description = up_descr, 
+        price = up_price, 
+        beds_amount = up_beds
+    WHERE id = up_roomId;
+END;
+$$ language plpgsql;
+
 --
 
 CREATE OR REPLACE FUNCTION insertOffer(
