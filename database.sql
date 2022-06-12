@@ -99,7 +99,8 @@ create table "reservations"
     "id" bigserial primary key not null,
     "created_at" timestamp(0) without time zone null,
     "updated_at" timestamp (0) without time zone null,
-    "date_from" date not null, "date_to" date not null,
+    "date_from" date not null, 
+    "date_to" date not null,
     "room_id" bigint not null,
     "user_id" bigint not null
 );
@@ -340,6 +341,29 @@ BEGIN
 END;
 $$ language plpgsql VOLATILE;
 
+CREATE OR REPLACE FUNCTION getReservationById(reservation_Id integer)
+    RETURNS SETOF reservations
+AS $$
+SELECT * FROM reservations r WHERE r.id = reservation_Id;
+$$ language sql stable;
+
+CREATE OR REPLACE FUNCTION insertReservation(
+    new_date_from date,
+    new_date_to date,
+    new_room_id int,
+    new_user_id int
+) RETURNS integer
+AS $$
+DECLARE
+    newId integer;
+BEGIN
+    insert into reservations (created_at, updated_at, date_from, date_to, room_id, user_id) values
+        (now(), now(), new_date_from, new_date_to, new_room_id, new_user_id) RETURNING id into newId;
+
+    RETURN newId;
+END;
+$$ language plpgsql VOLATILE;
+
 -- Procedures
 
 CREATE OR REPLACE PROCEDURE deleteRoomsByOfferId(offerId int)
@@ -356,6 +380,14 @@ CREATE OR REPLACE PROCEDURE deleteOffer(offerId int)
 AS $$
 BEGIN
     delete FROM offers o WHERE o.id = offerId;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE deleteReservationByID(reservation_Id int)
+    language plpgsql
+AS $$
+BEGIN
+    delete FROM reservations r WHERE r.id = reservation_Id;
 END;
 $$;
 
@@ -376,5 +408,25 @@ BEGIN
         "accommodationType" = u_accommodationType,
         updated_at = now()
     where id = u_offerId;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE updateReservation(
+    new_Id int,
+    new_date_from date,
+    new_date_to date,
+    new_room_id int,
+    new_user_id int
+)
+    language plpgsql
+AS $$
+BEGIN
+    update reservations set
+        date_from = new_date_from,
+        date_to = new_date_to,
+        room_id = new_room_id,
+        user_id = new_user_id,
+        updated_at = now()
+    where id = new_Id;
 END;
 $$;

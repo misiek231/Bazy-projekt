@@ -21,6 +21,14 @@ class ReservationController extends Controller
         $this->authorizeResource(Reservation::class, 'reservation');
     }
 
+    protected function resourceAbilityMap(): array
+    {
+        return [
+            'edit' => 'update',
+            'update' => 'update',
+            'destroy' => 'delete',
+        ];
+    }
     /**
      * Display a listing of the resource.
      *
@@ -60,9 +68,15 @@ class ReservationController extends Controller
     public function store(StoreReservationRequest $request): RedirectResponse
     {
         $requestData = $request->all();
-        $requestData['user_id'] = Auth::id();
-        Reservation::create($requestData);
-        return redirect()->route('reservations.index');
+        $reservationId = DB::insert('Select * from insertReservation(?, ?, ?, ?)',
+        [
+            $requestData->date_from,
+            $requestData->date_to,
+            $requestData->room_id,
+            $requestData->user_id,
+            Auth::id()
+        ]);
+                return redirect()->route('reservations.index');
     }
 
     /**
@@ -73,11 +87,15 @@ class ReservationController extends Controller
      */
     public function show(Reservation $reservation): View
     {
-        $dateFrom = Date::createFromFormat('Y-m-d', $reservation->date_from);
-        $dateTo = Date::createFromFormat('Y-m-d', $reservation->date_to);
-        $totalPrice = $reservation->room->price * $dateTo->diffInDays($dateFrom);
+        $reservation = DB::selectOne('select * from getReservationById(?)', [$reservation->id]);
+        $user = DB::selectOne('select * from getUserById(?)', [$reservation->user_id]);
+        $rooms = DB::selectOne('select * from getRoomById(?)', [$reservation->room_id]);
+        $reservation->user = $user;
+        $reservation->rooms = $rooms;
 
-        return view('reservations.show', ['reservation' => $reservation, 'totalPrice' => $totalPrice]);
+        return view('reservation.show', [
+            'reservation' => $reservation
+        ]);
     }
 
     /**
@@ -88,8 +106,17 @@ class ReservationController extends Controller
      */
     public function edit(Reservation $reservation)
     {
-        //
-    }
+        $reservation = DB::selectOne('select * from getReservationById(?)', [$reservation->id]);
+        $user = DB::selectOne('select * from getUserById(?)', [$reservation->user_id]);
+        $rooms = DB::selectOne('select * from getRoomById(?)', [$reservation->room_id]);
+        $reservation->user = $user;
+        $reservation->rooms = $rooms;
+
+        return view('reservation.create
+        ', [
+            'reservation' => $reservation
+        ]);
+        }
 
     /**
      * Update the specified resource in storage.
@@ -100,8 +127,9 @@ class ReservationController extends Controller
      */
     public function update(UpdateReservationRequest $request, Reservation $reservation)
     {
-        //
-    }
+        DB::update('call updateReservation(?, ?, ?, ?, ?)', [$reservation->id,  $request->date_from, $request->date_to, $request->room_id, $request->user_id]);
+        return redirect()->route('reservation.show', $reservation->id);
+        }
 
     /**
      * Remove the specified resource from storage.
@@ -111,6 +139,8 @@ class ReservationController extends Controller
      */
     public function destroy(Reservation $reservation)
     {
-        //
-    }
+        $reservation = DB::selectOne('select * from getReservationById(?)', [$reservation->id]);
+        DB::selectOne('call deleteReservationByID(?)', [$reservation->id]);
+        return redirect()->route('reservations.my');
+        }
 }
