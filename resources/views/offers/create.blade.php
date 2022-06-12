@@ -37,7 +37,7 @@
             @if(!isset($offer))
                 <div class="col-6">
                     <label for="image" class="form-label">Dodaj zdjęcia</label>
-                    <input value="{{$offer->image ?? ''}}" name="image" class="form-control @error('image') is-invalid @else is-valid @enderror" type="file" id="image" multiple>
+                    <input name="image" class="form-control @error('image') is-invalid @else is-valid @enderror" type="file" id="image" multiple>
                 </div>
             @endif
             <div class="col-12">

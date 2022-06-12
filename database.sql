@@ -276,10 +276,10 @@ CREATE OR REPLACE FUNCTION disabledDates (roomId INTEGER)
 	AS $$
 		BEGIN
 			RETURN QUERY
-			SELECT date_from, date_to 
+			SELECT date_from, date_to
 			FROM reservations
 			WHERE reservations.room_id = roomId;
-		END; 
+		END;
 	$$ language plpgsql;
 
 CREATE OR REPLACE FUNCTION insertRoom (
@@ -295,7 +295,7 @@ DECLARE
 BEGIN
     insert into rooms (id, created_at, updated_at, name, description, price, beds_amount, offer_id)
     values ( (SELECT max(id) AS lastId FROM rooms) + 1,
-        now(), now(), ins_name, ins_descr, ins_price, ins_beds, ins_offer) 
+        now(), now(), ins_name, ins_descr, ins_price, ins_beds, ins_offer)
         RETURNING id into newId;
     RETURN newId;
 END;
@@ -311,9 +311,9 @@ AS $$
 BEGIN
     UPDATE rooms SET
         updated_at = now(),
-        name = up_name, 
-        description = up_descr, 
-        price = up_price, 
+        name = up_name,
+        description = up_descr,
+        price = up_price,
         beds_amount = up_beds
     WHERE id = up_roomId;
 END;
@@ -364,19 +364,17 @@ CREATE OR REPLACE PROCEDURE updateOffer(
     u_name varchar,
     u_description varchar,
     u_place varchar,
-    u_accommodationType varchar,
-    u_image varchar
+    u_accommodationType varchar
 )
     language plpgsql
 AS $$
 BEGIN
-    update offers as o set
-        o.name = u_name,
-        o.description = u_description,
-        o.place = u_place,
-        o.accommodationType = u_accommodationType,
-        o.image = u_image,
-        o.updated_at = now()
-    where o.id = u_offerId;
+    update offers set
+        name = u_name,
+        description = u_description,
+        place = u_place,
+        "accommodationType" = u_accommodationType,
+        updated_at = now()
+    where id = u_offerId;
 END;
 $$;

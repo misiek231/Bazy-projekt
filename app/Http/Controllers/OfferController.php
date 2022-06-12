@@ -13,11 +13,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
+function objectToObject($instance, $className) {
+    return unserialize(sprintf(
+        'O:%d:"%s"%s',
+        strlen($className),
+        $className,
+        strstr(strstr(serialize($instance), '"'), ':')
+    ));
+}
+
 class OfferController extends Controller
 {
     public function __construct()
     {
-        // TODO: try to move auth to sql code
         $this->authorizeResource(Offer::class, 'offer');
     }
 
@@ -38,22 +46,6 @@ class OfferController extends Controller
      */
     public function index(OfferFilterRequest $request): View
     {
-
-        // var_dump(Offer::filter($request)->toSql());
-        // f_name varchar, f_dateFrom date, f_dateTo date, f_place varchar, f_peopleAmount int, f_accommodationType varchar, f_priceFrom float, f_priceTo float
-        $data = [
-            $request->name ?? 'null',
-            $request->dateFrom,
-            $request->dateTo ?? 'null',
-            $request->place ?? 'null',
-            $request->peopleAmount ?? 'null',
-            $request->accommodationType ?? 'null',
-            $request->priceFrom ?? 'null',
-            $request->priceTo ?? 'null',
-        ];
-
-        var_dump($data);
-
         $offers = DB::select('select * from getFilteredOffers('.
             (isset($request->name) ? '\''.$request->name.'\'' : 'null').', '.
             (isset($request->dateFrom) ? '\''.$request->dateFrom.'\'' : 'null').', '.
@@ -64,14 +56,12 @@ class OfferController extends Controller
             (isset($request->priceFrom) ? '\''.$request->priceFrom.'\'' : 'null').', '.
             (isset($request->priceTo) ? '\''.$request->priceTo.'\'' : 'null').')');
 
-
         foreach ($offers as $offer) {
             $offer->rooms = DB::select('select * from getRoomsByOfferId(?)', [$offer->id]);
         }
 
-
         return view('offers.index', [
-            'offers' => $offers //Offer::filter($request)->get(),
+            'offers' => $offers
         ]);
     }
 
@@ -86,6 +76,10 @@ class OfferController extends Controller
         $this->authorize('viewMy', Offer::class);
 
         $offers = DB::select('select * from getOfferByUserId(?)', [Auth::id()]);
+
+        foreach ($offers as $offer) {
+            $offer->rooms = DB::select('select * from getRoomsByOfferId(?)', [$offer->id]);
+        }
 
         return view('offers.my-offers', [
             'offers' => $offers,
@@ -110,10 +104,10 @@ class OfferController extends Controller
      */
     public function store(StoreOfferRequest $request)
     {
-        $fileName = $request->image->getClientOriginalName();
+        $fileName = trim($request->image->getClientOriginalName());
         $request->file('image')->storeAs('', $fileName, 'public');
 
-        $offerId = DB::insert('Select * from insertOffer(?, ?, ?, ?, ?, ?)',
+        $offerId = DB::select('Select * from insertOffer(?, ?, ?, ?, ?, ?)',
             [
                 $request->name,
                 $request->description,
@@ -123,7 +117,7 @@ class OfferController extends Controller
                 Auth::id()
             ]);
 
-        return redirect()->route('offers.show', $offerId);
+        return redirect()->route('offers.show', $offerId[0]->insertoffer);
     }
 
     /**
@@ -141,7 +135,7 @@ class OfferController extends Controller
         $offer->rooms = $rooms;
 
         return view('offers.show', [
-            'offer' => $offer
+            'offer' => objectToObject($offer, Offer::class)
         ]);
     }
 
@@ -174,19 +168,8 @@ class OfferController extends Controller
      */
     public function update(UpdateOfferRequest $request, Offer $offer): RedirectResponse
     {
-        $offer = DB::selectOne('select * from getOfferById(?)', [$offer->id]);
-        $oldFileName = $offer->image;
-        $input = $request->all();
+        DB::update('call updateOffer(?, ?, ?, ?, ?)', [$offer->id, $request->name, $request->description, $request->place, $request->accommodationType]);
 
-        $offer = DB::update('select * from updateOffer(?)', [$input->id, $input->name, $input->description, $input->place, $input->accommodationType, $input->image]);
-
-        if ($request->hasFile('image')) {
-            $fileName = $request->image->getClientOriginalName();
-            $request->file('image')->storeAs('', $fileName, 'public');
-            $offer->image = $fileName;
-            $offer->save();
-            Storage::disk('public')->delete($oldFileName);
-        }
         return redirect()->route('offers.show', $offer->id);
     }
 
@@ -200,8 +183,8 @@ class OfferController extends Controller
     {
 
         $offer = DB::selectOne('select * from getOfferById(?)', [$offer->id]);
-        DB::select('select * from deleteRoomsByOfferId(?)', [$offer->id]);
-        DB::select('select * from deleteOffer(?)', [$offer->id]);
+        DB::select('call deleteRoomsByOfferId(?)', [$offer->id]);
+        DB::select('call deleteOffer(?)', [$offer->id]);
 
         return redirect()->route('offers.my');
     }

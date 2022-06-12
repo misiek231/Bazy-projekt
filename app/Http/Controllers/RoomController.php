@@ -42,7 +42,7 @@ class RoomController extends Controller
     public function create(int $offerId): View
     {
         $offer = Offer::findOrFail($offerId);
-        $this->authorize('create', [Room::class, $offer]);
+        $this->authorize('create', [Room::class, $offer->user_id]);
         return view('rooms.create', ['offer' => $offer]);
     }
 
