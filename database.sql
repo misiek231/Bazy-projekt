@@ -217,6 +217,17 @@ values
         400,
         '2022-06-02 12:14:29');
 
+-- reservations
+
+INSERT INTO reservations (
+	created_at,
+	updated_at,
+	date_from,
+	date_to,
+	room_id,
+	user_id )
+	values (now(), now(),'2022-06-22 14:00:00', '2022-07-02 14:00:00', 1, 1);
+
 -- Functions
 
 CREATE OR REPLACE FUNCTION getOfferById(offer_id integer)
@@ -264,6 +275,12 @@ CREATE OR REPLACE FUNCTION getRoomById(room_id integer)
 	AS $$
 		SELECT * FROM rooms r WHERE r.id = room_id;
 	$$ language sql stable;
+
+CREATE OR REPLACE FUNCTION getOfferByRoomId(roomId integer)
+    RETURNS SETOF offers
+    AS $$
+        SELECT * FROM offers WHERE id = roomId;
+    $$ language sql stable;
 
 CREATE OR REPLACE PROCEDURE DeleteRoomById (room_id int)
  	AS $$
